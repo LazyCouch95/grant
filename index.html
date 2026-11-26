@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Агент поддержки Ачинского округа</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; color: #222; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 22px; }
+  .note { background: #fff8e1; border-left: 4px solid #f0b400; padding: 10px 14px; margin-bottom: 16px; font-size: 14px; }
+  .card { background: #fff; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  label { display: block; margin-top: 10px; font-size: 14px; }
+  input, select { width: 100%; padding: 7px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
+  .row { display: flex; gap: 12px; }
+  .row > div { flex: 1; }
+  button { margin-top: 16px; padding: 10px 18px; background: #1976d2; color: #fff; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; }
+  button:hover { background: #1565c0; }
+  .result { border-left: 5px solid #ccc; }
+  .eligible { border-left-color: #2e7d32; }
+  .not-eligible { border-left-color: #c62828; opacity: 0.85; }
+  .tag { display: inline-block; font-size: 12px; background: #e3f2fd; color: #0d47a1; padding: 2px 8px; border-radius: 10px; margin-right: 6px; }
+  .unverified { color: #b26a00; font-size: 13px; }
+  ul { margin: 6px 0 0 18px; padding: 0; font-size: 14px; }
+  .ok { color: #2e7d32; }
+  .fail { color: #c62828; }
+  .reminder { background: #e8f5e9; padding: 8px 12px; border-radius: 4px; margin-bottom: 6px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Агент поиска поддержки и грантов</h1>
+
+  <div class="note">
+    Демонстрационная версия. Программы, суммы и сроки условные. Перед использованием проверьте данные
+    по официальным источникам. Результат является предварительным подбором, а не гарантией получения поддержки.
+  </div>
+
+  <div class="card">
+    <h3>Профиль заявителя</h3>
+    <div class="row">
+      <div>
+        <label>Название
+          <input id="name" value="Кафе Пример">
+        </label>
+        <label>Тип заявителя
+          <select id="type">
+            <option>ИП</option><option>ООО</option><option>НКО</option>
+            <option>фермер</option><option>физлицо</option><option>учреждение</option>
+          </select>
+        </label>
+        <label>Направление
+          <select id="sector">
+            <option>торговля и услуги</option><option>туризм</option><option>сельское хозяйство</option>
+            <option>промышленность</option><option>IT и инновации</option><option>строительство и ЖКХ</option>
+            <option>социальная сфера и НКО</option><option>образование и молодёжь</option>
+            <option>культура и спорт</option><option>занятость</option><option>экология</option>
+          </select>
+        </label>
+      </div>
+      <div>
+        <label>Муниципалитет
+          <select id="municipality">
+            <option>Ачинск</option><option>Ачинский район</option>
+          </select>
+        </label>
+        <label>Выручка, млн руб.
+          <input id="revenue" type="number" step="0.1" value="3">
+        </label>
+        <label>Численность сотрудников
+          <input id="employees" type="number" value="4">
+        </label>
+        <label>Срок деятельности, лет
+          <input id="years" type="number" step="0.5" value="0.5">
+        </label>
+        <label>
+          <input id="debt" type="checkbox" style="width:auto"> Есть налоговая задолженность
+        </label>
+      </div>
+    </div>
+    <label>Дата, на которую считаем сроки
+      <input id="today" type="date">
+    </label>
+    <button onclick="runSearch()">Найти меры поддержки</button>
+  </div>
+
+  <div id="reminders"></div>
+  <div id="results"></div>
+</div>
+
+<script>
+// Каталог мер поддержки. Условные данные. Редактируйте и добавляйте записи.
+// verified: true только после проверки человеком.
+const CATALOG = [
+  {
+name: "Пример: микрозайм для начинающих предпринимателей",
+    kind: "займ", level: "фонд",
+    applicantTypes: ["ИП", "ООО"], sectors: [], territories: [],
+    maxRevenue: null, maxEmployees: null, minYears: 0,
+    amount: 1.0, deadline: null,
+    documents: ["паспорт", "бизнес-план"], verified: false
+  },
+  {
+    name: "Пример: грант на создание объекта туризма",
+    kind: "грант", level: "краевой",
+    applicantTypes: ["ИП", "ООО"], sectors: ["туризм"],
+    territories: ["Ачинск", "Ачинский район"],
+    maxRevenue: null, maxEmployees: null, minYears: 1,
+    amount: 2.0, deadline: "2025-10-01",
+    documents: ["бизнес-план", "смета"], verified: false
+  },
+  {
+    name: "Пример: компенсация затрат на обучение сотрудников",
+    kind: "компенсация", level: "муниципальный",
+    applicantTypes: ["ИП", "ООО"], sectors: [],
+    territories: ["Ачинск"],
+    maxRevenue: 10.0, maxEmployees: 50, minYears: 0,
+    amount: 0.2, deadline: "2025-12-31",
+    documents: ["договор с учебным центром", "акт выполненных работ"], verified: false
+  },
+  {
+    name: "Пример: субсидия на технику для фермерских хозяйств",
+    kind: "субсидия", level: "краевой",
+    applicantTypes: ["фермер", "ООО"], sectors: ["сельское хозяйство"],
+    territories: ["Ачинский район"],
+    maxRevenue: null, maxEmployees: null, minYears: 1,
+    amount: 3.0, deadline: "2025-11-15",
+    documents: ["выписка ЕГРИП", "справка из налоговой", "смета на технику"], verified: false
+  }
+];
+
+function checkEligibility(a, s) {
+  const ok = [], fail = [];
+  const rule = (cond, good, bad) => (cond ? ok : fail).push(cond ? good : bad);
+
+  rule(s.applicantTypes.includes(a.type), `Тип заявителя подходит (${a.type})`,
+       `Нужен тип: ${s.applicantTypes.join(", ")}`);
+  rule(s.sectors.length === 0 || s.sectors.includes(a.sector), "Направление подходит",
+       `Направление не совпадает: нужно ${s.sectors.join(", ")}`);
+  rule(s.territories.length === 0 || s.territories.includes(a.municipality), "Территория подходит",
+       `Территория не входит в программу: ${s.territories.join(", ")}`);
+  rule(s.maxRevenue === null || a.revenue <= s.maxRevenue, "Выручка в пределах лимита",
+       `Выручка выше лимита ${s.maxRevenue} млн`);
+  rule(s.maxEmployees === null || a.employees <= s.maxEmployees, "Численность в пределах лимита",
+       `Численность выше лимита ${s.maxEmployees}`);
+  rule(a.years >= s.minYears, "Срок деятельности достаточный",
+       `Нужно не менее ${s.minYears} лет деятельности`);
+  rule(!a.hasDebt, "Нет налоговой задолженности",
+       "Есть налоговая задолженность: большинство мер её не допускает");
+
+  return { eligible: fail.length === 0, ok, fail };
+}
+
+function daysBetween(fromDate, toDateStr) {
+  const to = new Date(toDateStr + "T00:00:00");
+  return Math.round((to - fromDate) / 86400000);
+}
+
+function search(a, today) {
+  const results = [];
+  for (const s of CATALOG) {
+    let days = null;
+    if (s.deadline) {
+      days = daysBetween(today, s.deadline);
+      if (days < 0) continue;          // срок прошёл
+    }
+    const r = checkEligibility(a, s);
+    results.push({ ...s, days, ...r });
+  }
+  // сначала подходящие, затем по сроку; постоянный приём — в конце группы
+  results.sort((x, y) =>
+    (x.eligible === y.eligible ? 0 : x.eligible ? -1 : 1) ||
+    ((x.days === null) - (y.days === null)) ||
+    ((x.days || 0) - (y.days || 0)) ||
+    (y.amount - x.amount));
+  return results;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function runSearch() {
+  const dateValue = document.getElementById("today").value;
+  const today = dateValue ? new Date(dateValue + "T00:00:00") : new Date(new Date().toDateString());
+
+  const applicant = {
+    name: document.getElementById("name").value,
+    type: document.getElementById("type").value,
+    sector: document.getElementById("sector").value,
+    municipality: document.getElementById("municipality").value,revenue: parseFloat(document.getElementById("revenue").value) || 0,
+    employees: parseInt(document.getElementById("employees").value) || 0,
+    years: parseFloat(document.getElementById("years").value) || 0,
+    hasDebt: document.getElementById("debt").checked
+  };
+
+  const results = search(applicant, today);
+
+  // напоминания: 14, 7 и 3 дня до дедлайна для подходящих мер
+  const reminders = results.filter(r => r.eligible && [14, 7, 3].includes(r.days));
+  document.getElementById("reminders").innerHTML = reminders.map(r =>
+    `<div class="reminder">Через ${r.days} дн. дедлайн: «${escapeHtml(r.name)}» (${r.deadline})</div>`
+  ).join("");
+
+  document.getElementById("results").innerHTML = results.map(r => `
+    <div class="card result ${r.eligible ? "eligible" : "not-eligible"}">
+      <strong>${escapeHtml(r.name)}</strong><br>
+      <span class="tag">${escapeHtml(r.kind)}</span>
+      <span class="tag">${escapeHtml(r.level)}</span>
+      <span class="tag">${r.amount} млн руб.</span>
+      <span class="tag">${r.deadline ? "до " + r.deadline + (r.days !== null ? " (" + r.days + " дн.)" : "") : "постоянный приём"}</span>
+      <span class="tag">${r.eligible ? "подходит" : "не подходит"}</span>
+      ${r.verified ? "" : '<div class="unverified">Требует проверки первоисточника</div>'}
+      <ul>
+        ${r.ok.map(x => `<li class="ok">${escapeHtml(x)}</li>`).join("")}
+        ${r.fail.map(x => `<li class="fail">${escapeHtml(x)}</li>`).join("")}
+      </ul>
+      ${r.eligible ? `<div><em>Документы:</em> ${r.documents.map(escapeHtml).join(", ")}</div>` : ""}
+    </div>`).join("") || "<div class='card'>Действующих мер не найдено.</div>";
+}
+
+// Устанавливаем сегодняшнюю дату по умолчанию
+document.getElementById("today").valueAsDate = new Date();
+runSearch();
+</script>
+</body>
+</html>
