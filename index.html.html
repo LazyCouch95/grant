@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🤖 ИИ-Агент по грантам | Ачинский округ</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  :root {
+    --bg: #0f172a;
+    --bg-card: #1e293b;
+    --bg-hover: #334155;
+    --accent: #3b82f6;
+    --accent-2: #8b5cf6;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --text: #f1f5f9;
+    --text-dim: #94a3b8;
+    --border: #334155;
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+  }
+  
+  .container { max-width: 1400px; margin: 0 auto; }
+  
+  header {
+    background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15));
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 25px;
+    backdrop-filter: blur(10px);
+  }
+  
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  
+  h1 {
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, #60a5fa, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .subtitle { color: var(--text-dim); margin-top: 5px; }
+  
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+  }
+  
+  .stat-card {
+    background: rgba(255,255,255,0.05);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  
+  .stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+  
+  .controls {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 25px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+  }
+  
+  .search-box {
+    flex: 1;
+    min-width: 250px;
+    position: relative;
+  }
+  
+  .search-box input {
+    width: 100%;
+    padding: 12px 15px 12px 40px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+  
+  .search-box input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  
+  .search-box::before {
+    content: "🔍";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 25px;
+  }
+  
+  .filter-btn {
+    padding: 8px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  
+  .filter-btn:hover {
+    background: var(--bg-hover);
+    transform: translateY(-1px);
+  }
+  
+  .filter-btn.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+    font-weight: 600;
+  }
+  
+  .section {
+    margin-bottom: 40px;
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+  }
+  
+  .section-title.urgent { color: var(--danger); }
+  .section-title.upcoming { color: var(--warning); }
+  .section-title.ongoing { color: var(--success); }
+  
+  .grants-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+  }
+  
+  .grant-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  
+  .grant-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--accent);
+  }
+  
+  .grant-card.urgent::before { background: var(--danger); }
+  .grant-card.upcoming::before { background: var(--warning); }
+  .grant-card.ongoing::before { background: var(--success); }
+  
+  .grant-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 10px 30px rgba(59,130,246,0.2);
+  }
+  
+  .grant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    gap: 10px;
+  }
+  
+  .grant-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.3;
+    flex: 1;
+  }
+  
+  .grant-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  
+  .badge-urgent { background: rgba(239,68,68,0.2); color: #fca5a5; }
+  .badge-upcoming { background: rgba(245,158,11,0.2); color: #fcd34d; }
+  .badge-ongoing { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+  
+  .grant-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 15px 0;
+  }
+  
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+  }
+  
+  .meta-icon { font-size: 1.1rem; }
+  .meta-value { color: var(--text); font-weight: 500; }
+  
+  .grant-direction {
+    display: inline-block;
+    padding: 3px 10px;
+    background: rgba(139,92,246,0.15);
+    border-radius: 10px;
+    font-size: 0.8rem;
+    color: #c4b5fd;
+    margin-right: 6px;
+    margin-top: 8px;
+  }
+  
+  .grant-idea {
+    background: rgba(16,185,129,0.1);
+    border-left: 3px solid var(--success);
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  
+  .grant-idea strong { color: var(--success); }
+  
+  .deadline-bar {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+  }
+  
+  .deadline-date {
+    color: var(--warning);
+    font-weight: 600;
+  }
+  
+  .deadline-date.critical { color: var(--danger); }
+  
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+  }
+  
+  .empty-state-icon { font-size: 4rem; margin-bottom: 15px; }
+  
+  footer {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+  
+  .pulse {
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  
+  @media (max-width: 640px) {
+    h1 { font-size: 1.5rem; }
+    .grants-grid { grid-template-columns: 1fr; }
+    body { padding: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-top">
+      <div>
+        <h1>🤖 ИИ-Агент по грантам</h1>
+        <div class="subtitle">Ачинский муниципальный округ · Красноярский край</div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-size: 0.9rem; color: var(--text-dim);">Обновлено:</div>
+        <div style="font-weight: 600;" id="currentDate">26 ноября 2026</div>
+      </div>
+    </div>
+    
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-value" style="color: var(--danger);" id="urgentCount">0</div>
+        <div class="stat-label">🔥 Срочных</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color: var(--warning);" id="upcomingCount">0</div>
+        <div class="stat-label">📅 Готовимся</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color: var(--success);" id="ongoingCount">0</div>
+        <div class="stat-label">💡 Возможности</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalSum">0</div>
+        <div class="stat-label">💰 Общая сумма, млн ₽</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalGrants">0</div>
+        <div class="stat-label">🎯 Всего грантов</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Поиск по названию, фонду, направлению...">
+    </div>
+    <button class="filter-btn" onclick="resetFilters()" style="background: var(--danger);">✕ Сбросить</button>
+  </div>
+
+  <div class="filters" id="filtersContainer">
+    <button class="filter-btn active" data-direction="all">🌐 Все направления</button>
+    <button class="filter-btn" data-direction="культура">🏛 Культура</button>
+    <button class="filter-btn" data-direction="образование">🏫 Образование</button>
+    <button class="filter-btn" data-direction="спорт">⚽ Спорт</button>
+    <button class="filter-btn" data-direction="молодежь">🧑‍🎓 Молодежь</button>
+    <button class="filter-btn" data-direction="жкх">🌳 Благоустройство</button>
+    <button class="filter-btn" data-direction="агро">🚜 Сельское хозяйство</button>
+    <button class="filter-btn" data-direction="бизнес">💼 Малый бизнес</button>
+    <button class="filter-btn" data-direction="экология">🌱 Экология</button>
+    <button class="filter-btn" data-direction="соцзащита">👨‍👩‍👧 Соцзащита</button>
+    <button class="filter-btn" data-direction="здравоохранение">🏥 Здравоохранение</button>
+    <button class="filter-btn" data-direction="нко">🧩 НКО</button>
+    <button class="filter-btn" data-direction="туризм">🎯 Туризм</button>
+    <button class="filter-btn" data-direction="ит">💻 ИТ</button>
+    <button class="filter-btn" data-direction="дороги">🛣 Дороги</button>
+    <button class="filter-btn" data-direction="патриотика">🇷🇺 Патриотика</button>
+    <button class="filter-btn" data-direction="наука">🔬 Наука</button>
+    <button class="filter-btn" data-direction="сво">🎗 СВО</button>
+  </div>
+
+  <div id="grantsContainer"></div>
+
+  <footer>
+    <p>🤖 ИИ-Агент по грантам · Ачинский муниципальный округ</p>
+    <p style="margin-top: 8px; font-size: 0.8rem;">Данные обновляются еженедельно. Источники: ПФКИ, ФПГ, Минкульт, Росмолодёжь, Минсельхоз, Минэкологии, Минспорт, РФРИТ, Фонд Тимченко, Фонд Потанина, Агентство МСП</p>
+  </footer>
+
+</div>
+
+<script>
+const grants = [
+  // 🔥 СРОЧНЫЕ (дедлайн до конца 2026 / начало 2027)
+  {
+    id: 1,
+    title: "Президентский фонд культурных инициатив (ПФКИ) — II конкурс 2027",
+    direction: "культура",
+    status: "urgent",
+    funder: "ПФКИ",
+    who: "МБУК, НКО, ИП, физлица, коммерческие организации",
+    amount: "100 тыс. – 15 млн ₽",
+    amountNum: 15,
+    deadline: "07.12.2026",
+    link: "https://фондкультурныхинициатив.рф",
+    idea: "Фестиваль идентичности «Чулымские берега» или мобильная цифровая экспозиция для сельских ДК Ачинского округа"
+  },
+  {
+    id: 2,
+    title: "Грант «Семейная опора» Красноярского края",
+    direction: "соцзащита",
+    status: "urgent",
+    funder: "Минсоцполитики Красноярского края",
+    who: "НКО, работающие с семьями",
+    amount: "до 300 000 ₽",
+    amountNum: 0.3,
+    deadline: "15.01.2027",
+    link: "https://krasbezsirot.ru/grants",
+    idea: "Программа поддержки многодетных семей в сёлах Ачинского округа"
+  },
+  {
+    id: 3,
+    title: "Гранты ПОРА (им. А.Н. Чилингарова)",
+    direction: "экология",
+    status: "urgent",
+    funder: "ПОРА",
+    who: "НКО, физлица, образовательные учреждения",
+    amount: "до 200 000 ₽",
+    amountNum: 0.2,
+    deadline: "30.12.2026",
+    link: "https://porarctic.ru/ru/grants/",
+    idea: "Экомониторинг реки Чулым с участием школьников и волонтёров округа"
+  },
+  {
+    id: 4,
+    title: "Росмолодёжь.Гранты (Волонтёры-медики)",
+    direction: "здравоохранение",
+    status: "urgent",
+    funder: "Росмолодёжь",
+    who: "Физлица 14-35 лет, учреждения",
+    amount: "до 3 млн ₽",
+    amountNum: 3,
+    deadline: "31.12.2026",
+    link: "https://grants.rosmolodez.ru",
+    idea: "Мобильные бригады здоровья для отдалённых сёл Ачинского округа"
+  },
+  {
+    id: 5,
+    title: "Экспериментальные классы (ККФН)",
+    direction: "образование",
+    status: "urgent",
+    funder: "Красноярский краевой фонд науки",
+    who: "Педагоги, школы",
+    amount: "до 500 000 ₽",
+    amountNum: 0.5,
+    deadline: "20.12.2026",
+    link: "https://krao.ru",
+    idea: "Агролаборатория или IT-класс в школе Ачинского округа"
+  },
+  {
+    id: 6,
+    title: "Земский доктор / Земский фельдшер",
+    direction: "здравоохранение",
+    status: "urgent",
+    funder: "Минздрав РФ / Красноярский край",
+    who: "Врачи до 55 лет, фельдшеры, акушерки",
+    amount: "1–1,5 млн ₽ (врачам) / 500–750 тыс. ₽ (фельдшерам)",
+    amountNum: 1.5,
+    deadline: "Декабрь 2026",
+    link: "https://minzdrav.gov.ru",
+    idea: "Привлечение медиков в сёла Ачинского округа: Малиновка, Ястребовка, Преображенка"
+  },
+  {
+    id: 7,
+    title: "Земский учитель",
+    direction: "образование",
+    status: "urgent",
+    funder: "Минпросвещения РФ",
+    who: "Учителя до 55 лет",
+    amount: "1–2 млн ₽",
+    amountNum: 2,
+    deadline: "15.05.2027 (1 этап)",
+    link: "https://zemteacher.edu.ru",
+    idea: "Привлечение педагогов в сельские школы Ачинского округа"
+  },
+  {
+    id: 8,
+    title: "Земский работник культуры",
+    direction: "культура",
+    status: "urgent",
+    funder: "Минкультуры РФ / Красноярский край",
+    who: "Работники культуры до 55 лет",
+    amount: "1 млн ₽",
+    amountNum: 1,
+    deadline: "Апрель–сентябрь 2026",
+    link: "https://culture.gov.ru",
+    idea: "Привлечение культработников в сельские ДК Ачинского округа"
+  },
+  {
+    id: 9,
+    title: "Грант «Агротуризм» — 2026",
+    direction: "туризм",
+    status: "urgent",
+    funder: "Минсельхоз РФ",
+    who: "Сельхозпроизводители, ИП, КФХ",
+    amount: "3–10 млн ₽",
+    amountNum: 10,
+    deadline: "До 03.12.2026",
+    link: "https://krasagro.ru",
+    idea: "Этно-ферма на Чулыме с гостевыми домами и экскурсиями по историческим местам"
+  },
+  {
+    id: 10,
+    title: "Грант «Агромотиватор» для участников СВО",
+    direction: "сво",
+    status: "urgent",
+    funder: "Минсельхоз РФ",
+    who: "Ветераны СВО, контрактники, мобилизованные",
+    amount: "до 7 млн ₽ (КРС) / до 5 млн ₽ (другие)",
+    amountNum: 7,
+    deadline: "До 03.12.2026",
+    link: "https://sofp.ru/grant-agromotivator",
+    idea: "Фермерское хозяйство для ветеранов СВО в сёлах Ачинского округа"
+  },
+  {
+    id: 11,
+    title: "Грант «Наш фермер» Красноярского края",
+    direction: "агро",
+    status: "urgent",
+    funder: "Минсельхоз Красноярского края",
+    who: "Фермерские хозяйства округа",
+    amount: "до 8 млн ₽",
+    amountNum: 8,
+    deadline: "До 24.09.2026",
+    link: "https://krasagro.ru/pages/state_support/grants/grant-nash-fermer/",
+    idea: "Развитие существующих фермерских хозяйств в округе"
+  },
+  {
+    id: 12,
+    title: "Грант на малую сельскую пекарню",
+    direction: "бизнес",
+    status: "urgent",
+    funder: "Минсельхоз РФ",
+    who: "ИП, ООО в сельской местности",
+    amount: "до 10 млн ₽ (до 50% стоимости)",
+    amountNum: 10,
+    deadline: "Ноябрь–декабрь 2026",
+    link: "https://krasagro.ru",
+    idea: "Семейная пекарня в селе Малиновка или Ястребовка"
+  },
+  {
+    id: 13,
+    title: "Грант Минспорта России для НКО",
+    direction: "спорт",
+    status: "urgent",
+    funder: "Минспорт РФ",
+    who: "НКО (стаж от 3 лет)",
+    amount: "до 10 млн ₽",
+    amountNum: 10,
+    deadline: "01.03.2027",
+    link: "https://minsport.gov.ru",
+    idea: "Спортивный фестиваль «Чулымский богатырь» в Ачинском округе"
+  },
+  {
+    id: 14,
+    title: "Фонд президентских грантов (ФПГ) — 1-й конкурс 2027",
+    direction: "нко",
+    status: "urgent",
+    funder: "ФПГ",
+    who: "НКО",
+    amount: "до 30 млн ₽",
+    amountNum: 30,
+    deadline: "9 ноября 2026 (подача)",
+    link: "https://pgrants.ru",
+    idea: "Инклюзивные культурные программы или патриотические проекты в округе"
+  },
+  {
+    id: 15,
+    title: "Гранты РФРИТ на внедрение отечественных ИТ-решений",
+    direction: "ит",
+    status: "urgent",
+    funder: "РФРИТ / Минцифры",
+    who: "ИТ-компании, заказчики ПО",
+    amount: "100 млн – 6 млрд ₽ (до 80% стоимости)",
+    amountNum: 500,
+    deadline: "До конца 2026",
+    link: "https://ozp.rfrit.ru",
+    idea: "Внедрение цифровых сервисов для муниципальных услуг Ачинска"
+  },
+  {
+    id: 16,
+    title: "Конкурс «Спорт для всех» Фонда Потанина",
+    direction: "спорт",
+    status: "urgent",
+    funder: "Фонд Потанина",
+    who: "НКО (социальный спорт)",
+    amount: "до 5 млн ₽",
+    amountNum: 5,
+    deadline: "Декабрь 2026",
+    link: "https://fondpotanin.ru",
+    idea: "Дворовый спорт для детей в сёлах Ачинского округа"
+  },
+  {
+    id: 17,
+    title: "Грант «Студенческий стартап» (Фонд содействия инновациям)",
+    direction: "бизнес",
+    status: "urgent",
+    funder: "ФСИ",
+    who: "Студенты вузов, аспиранты",
+    amount: "1 млн ₽",
+    amountNum: 1,
+    deadline: "Декабрь 2026",
+    link: "https://fasie.ru/studstartup/",
+    idea: "Инновационные проекты студентов Ачинска (АТЭТ, Ачинский педколледж)"
+  },
+
+  // 📅 ГОТОВИМСЯ (конец 2026 — весна 2027)
+  {
+    id: 18,
+    title: "Всероссийский конкурс благоустройства малых городов",
+    direction: "жкх",
+    status: "upcoming",
+    funder: "Минстрой РФ",
+    who: "Муниципалитеты",
+    amount: "40 – 150 млн ₽",
+    amountNum: 150,
+    deadline: "Весна 2027",
+    link: "https://gorodsreda.ru",
+    idea: "Благоустройство набережной Чулыма или исторического центра Ачинска"
+  },
+  {
+    id: 19,
+    title: "Программа поддержки местных инициатив (ППМИ)",
+    direction: "жкх",
+    status: "upcoming",
+    funder: "Минфин Красноярского края",
+    who: "Сельсоветы, ТОСы",
+    amount: "3 – 5 млн ₽",
+    amountNum: 5,
+    deadline: "Апрель-май 2027",
+    link: "https://minfin.rk.gov.ru",
+    idea: "Ремонт крыши сельского клуба или закупка звукового оборудования"
+  },
+  {
+    id: 20,
+    title: "Росмолодёжь.Гранты (1-й сезон 2027)",
+    direction: "молодежь",
+    status: "upcoming",
+    funder: "Росмолодёжь",
+    who: "Физлица 14-35 лет, НКО, вузы",
+    amount: "до 3 млн ₽",
+    amountNum: 3,
+    deadline: "Февраль-март 2027",
+    link: "https://grants.rosmolodez.ru",
+    idea: "Молодёжная креативная лаборатория по созданию контента об округе"
+  },
+  {
+    id: 21,
+    title: "ПФКИ — 2-й конкурс 2027",
+    direction: "культура",
+    status: "upcoming",
+    funder: "ПФКИ",
+    who: "МБУК, НКО, ИП, физлица",
+    amount: "100 тыс. – 15 млн ₽",
+    amountNum: 15,
+    deadline: "Апрель-май 2027",
+    link: "https://фондкультурныхинициатив.рф",
+    idea: "Цифровая краеведческая экспозиция с QR-кодами в музеях округа"
+  },
+  {
+    id: 22,
+    title: "Единый грант для фермеров (замена «Агростартапа»)",
+    direction: "агро",
+    status: "upcoming",
+    funder: "Минсельхоз РФ",
+    who: "Начинающие фермеры, КФХ",
+    amount: "5–30 млн ₽",
+    amountNum: 30,
+    deadline: "Весна 2027",
+    link: "https://krasagro.ru",
+    idea: "Семейная ферма КРС или тепличное хозяйство в сёлах округа"
+  },
+  {
+    id: 23,
+    title: "Грант «Семейная ферма»",
+    direction: "агро",
+    status: "upcoming",
+    funder: "Минсельхоз РФ",
+    who: "КФХ (стаж от 12 мес.)",
+    amount: "до 30 млн ₽",
+    amountNum: 30,
+    deadline: "Весна 2027",
+    link: "https://krasagro.ru",
+    idea: "Развитие семейной молочной фермы в округе"
+  },
+  {
+    id: 24,
+    title: "Грант «Агропрогресс»",
+    direction: "агро",
+    status: "upcoming",
+    funder: "Минсельхоз РФ",
+    who: "Сельхозорганизации (не КФХ)",
+    amount: "до 30 млн ₽",
+    amountNum: 30,
+    deadline: "Весна 2027",
+    link: "https://krasagro.ru",
+    idea: "Строительство тепличного комплекса в Ачинском округе"
+  },
+  {
+    id: 25,
+    title: "Фонд президентских грантов (ФПГ) — 2-й конкурс 2027",
+    direction: "нко",
+    status: "upcoming",
+    funder: "ФПГ",
+    who: "НКО",
+    amount: "до 30 млн ₽",
+    amountNum: 30,
+    deadline: "15.03.2027",
+    link: "https://pgrants.ru",
+    idea: "Инклюзивные культурные программы или патриотические проекты"
+  },
+  {
+    id: 26,
+    title: "Краевые субсидии Минкультуры",
+    direction: "культура",
+    status: "upcoming",
+    funder: "Минкультуры Красноярского края",
+    who: "Муниципальные учреждения",
+    amount: "100 тыс. – 10 млн ₽",
+    amountNum: 10,
+    deadline: "Март-апрель 2027",
+    link: "https://grants.culture.ru",
+    idea: "Укрепление материально-технической базы сельских ДК"
+  },
+  {
+    id: 27,
+    title: "Грантовый конкурс «Партнёрство» Красноярского края",
+    direction: "нко",
+    status: "upcoming",
+    funder: "Правительство Красноярского края",
+    who: "НКО, ТОСы",
+    amount: "до 2 млн ₽",
+    amountNum: 2,
+    deadline: "Февраль 2027",
+    link: "https://krasgrant.ru",
+    idea: "Школа волонтёров Ачинского округа или проект «Добрый спорт»"
+  },
+  {
+    id: 28,
+    title: "Грант «Агротуризм» — 2027 (новый сезон)",
+    direction: "туризм",
+    status: "upcoming",
+    funder: "Минсельхоз РФ",
+    who: "Сельхозпроизводители",
+    amount: "3–10 млн ₽",
+    amountNum: 10,
+    deadline: "Апрель-май 2027",
+    link: "https://krasagro.ru",
+    idea: "Агротуристический комплекс с конными прогулками и мастер-классами"
+  },
+  {
+    id: 29,
+    title: "Гранты для детских культурных центров",
+    direction: "культура",
+    status: "upcoming",
+    funder: "Минкультуры РФ / нацпроект «Семья»",
+    who: "Муниципальные учреждения культуры",
+    amount: "до 10 млн ₽",
+    amountNum: 10,
+    deadline: "До 18 мая 2027",
+    link: "https://culture.gov.ru",
+    idea: "Детский культурно-просветительский центр на базе библиотеки Ачинска"
+  },
+  {
+    id: 30,
+    title: "Президентский фонд природы",
+    direction: "экология",
+    status: "upcoming",
+    funder: "Президентский фонд природы",
+    who: "НКО, физлица",
+    amount: "до 30 млн ₽",
+    amountNum: 30,
+    deadline: "Октябрь-ноябрь 2027",
+    link: "https://президентскийфондприроды.рф",
+    idea: "Восстановление экосистемы реки Чулым, экомониторинг"
+  },
+  {
+    id: 31,
+    title: "Комплексное развитие сельских территорий (КРСТ)",
+    direction: "жкх",
+    status: "upcoming",
+    funder: "Минсельхоз РФ",
+    who: "Муниципалитеты, аграрные организации",
+    amount: "до 70% стоимости проекта",
+    amountNum: 50,
+    deadline: "Регулярно в 2027",
+    link: "https://mcx.gov.ru",
+    idea: "Строительство дорог, ФАПов, водопроводов в сёлах Ачинского округа"
+  },
+  {
+    id: 32,
+    title: "Гранты Росмолодёжи для НКО по патриотическому воспитанию",
+    direction: "патриотика",
+    status: "upcoming",
+    funder: "Росмолодёжь",
+    who: "НКО, молодёжные объединения",
+    amount: "до 5 млн ₽",
+    amountNum: 5,
+    deadline: "Март-апрель 2027",
+    link: "https://fadm.gov.ru",
+    idea: "Военно-патриотические клубы и поисковые отряды в округе"
+  },
+  {
+    id: 33,
+    title: "Грант «Молодой предприниматель»",
+    direction: "бизнес",
+    status: "upcoming",
+    funder: "Агентство МСП",
+    who: "ИП и учредители ООО до 25 лет",
+    amount: "100–500 тыс. ₽ (до 1 млн в Арктике)",
+    amountNum: 0.5,
+    deadline: "Весна 2027",
+    link: "https://xn--h1alcedd.xn--d1aqf.xn--p1ai",
+    idea: "Открытие молодёжного кафе или мастерской в Ачинске"
+  },
+  {
+    id: 34,
+    title: "Грант для социального предпринимательства",
+    direction: "бизнес",
+    status: "upcoming",
+    funder: "Агентство МСП",
+    who: "Социальные предприятия, реестр МСП",
+    amount: "до 500 тыс. ₽",
+    amountNum: 0.5,
+    deadline: "Весна 2027",
+    link: "https://xn--h1alcedd.xn--d1aqf.xn--p1ai",
+    idea: "Социальное предприятие в сфере ухода за пожилыми в округе"
+  },
+  {
+    id: 35,
+    title: "Гранты на развитие туризма (Ростуризм)",
+    direction: "туризм",
+    status: "upcoming",
+    funder: "Минэкономразвития РФ",
+    who: "ИП, ООО в сфере туризма",
+    amount: "до 10 млн ₽",
+    amountNum: 10,
+    deadline: "Весна-лето 2027",
+    link: "https://tourism.gov.ru",
+    idea: "Модульные гостевые дома на берегу Чулыма"
+  },
+  {
+    id: 36,
+    title: "Гранты для музеев и библиотек (Фонд Потанина)",
+    direction: "культура",
+    status: "upcoming",
+    funder: "Фонд Потанина",
+    who: "Музеи, библиотеки",
+    amount: "до 10 млн ₽",
+    amountNum: 10,
+    deadline: "Январь-февраль 2027",
+    link: "https://fondpotanin.ru",
+    idea: "Цифровизация краеведческих коллекций музея Ачинска"
+  },
+
+  // 💡 ВОЗМОЖНОСТИ (круглогодично / регулярно)
+  {
+    id: 37,
+    title: "Социальный контракт",
+    direction: "соцзащита",
+    status: "ongoing",
+    funder: "Минсоцполитики края",
+    who: "Малоимущие граждане",
+    amount: "до 350 000 ₽",
+    amountNum: 0.35,
+    deadline: "Круглогодично",
+    link: "https://socialnii-kontrakt.ru",
+    idea: "Открытие собственного дела или ведение ЛПХ в сёлах округа"
+  },
+  {
+    id: 38,
+    title: "Гранты для МСП (Агентство развития Красноярского края)",
+    direction: "бизнес",
+    status: "ongoing",
+    funder: "Агентство МСП Красноярского края",
+    who: "ИП, ООО (МСП)",
+    amount: "до 1 млн ₽",
+    amountNum: 1,
+    deadline: "Круглогодично",
+    link: "https://мсп.рф",
+    idea: "Открытие производства или социального предприятия в Ачинске"
+  },
+  {
+    id: 39,
+    title: "Гранты Первых — «Учись и познавай!»",
+    direction: "образование",
+    status: "ongoing",
+    funder: "Движение Первых",
+    who: "Школьники, учителя",
+    amount: "до 1 млн ₽",
+    amountNum: 1,
+    deadline: "Круглогодично",
+    link: "https://будьвдвижении.рф/grants/",
+    idea: "Школьный проект по краеведению или робототехнике"
+  },
+  {
+    id: 40,
+    title: "Фонд Тимченко — «Среда возможностей»",
+    direction: "молодежь",
+    status: "ongoing",
+    funder: "Фонд Тимченко",
+    who: "НКО, работающие с детьми на малых территориях",
+    amount: "до 1 млн ₽",
+    amountNum: 1,
+    deadline: "Регулярно",
+    link: "https://fondtimchenko.ru",
+    idea: "Подростковый клуб и творческие мастерские в сёлах Ачинского округа"
+  },
+  {
+    id: 41,
+    title: "Фонд Тимченко — «Туда, где семья»",
+    direction: "соцзащита",
+    status: "ongoing",
+    funder: "Фонд Тимченко",
+    who: "НКО, работающие с семьями в кризисной ситуации",
+    amount: "до 1 млн ₽",
+    amountNum: 1,
+    deadline: "Регулярно",
+    link: "https://fondtimchenko.ru",
+    idea: "Поддержка семей в трудной ситуации в сёлах округа"
+  },
+  {
+    id: 42,
+    title: "Краевой творческий конкурс по экологии",
+    direction: "экология",
+    status: "ongoing",
+    funder: "Минэкологии Красноярского края",
+    who: "Молодёжь 14-35 лет",
+    amount: "до 500 000 ₽",
+    amountNum: 0.5,
+    deadline: "Регулярно",
+    link: "https://cultura24.ru",
+    idea: "Экологические акции и проекты по очистке реки Чулым"
+  },
+  {
+    id: 43,
+    title: "Грант «Агромотиватор» (общий)",
+    direction: "агро",
+    status: "ongoing",
+    funder: "Минсельхоз РФ",
+    who: "Фермеры, сельхозпроизводители",
+    amount: "до 5 млн ₽",
+    amountNum: 5,
+    deadline: "Регулярно",
+    link: "https://krasagro.ru",
+    idea: "Поддержка молодых фермеров в округе"
+  },
+  {
+    id: 44,
+    title: "Субсидии на благоустройство сельских территорий",
+    direction: "жкх",
+    status: "ongoing",
+    funder: "Минсельхоз Красноярского края",
+    who: "Сельсоветы, администрации",
+    amount: "до 5 млн ₽",
+    amountNum: 5,
+    deadline: "Регулярно",
+    link: "https://krasagro.ru",
+    idea: "Парки, детские площадки, освещение в сёлах округа"
+  },
+  {
+    id: 45,
+    title: "Гранты «Зелёная Премия» (РЭО)",
+    direction: "экология",
+    status: "ongoing",
+    funder: "Российский экологический оператор",
+    who: "Активисты, волонтёры, НКО, бизнес",
+    amount: "денежные и нематериальные призы",
+    amountNum: 0.5,
+    deadline: "Ежегодно",
+    link: "https://award.reo.ru",
+    idea: "Проекты по раздельному сбору мусора в Ачинском округе"
+  },
+  {
+    id: 46,
+    title: "Гранты Минпросвещения на патриотическое воспитание",
+    direction: "патриотика",
+    status: "ongoing",
+    funder: "Минпросвещения РФ",
+    who: "НКО, образовательные организации",
+    amount: "до 5 млн ₽",
+    amountNum: 5,
+    deadline: "Регулярно",
+    link: "https://edu.gov.ru",
+    idea: "Военно-патриотические сборы и музеи боевой славы в школах округа"
+  },
+  {
+    id: 47,
+    title: "Национальная премия «Патриот»",
+    direction: "патриотика",
+    status: "ongoing",
+    funder: "Росмолодёжь",
+    who: "Физлица, НКО, СМИ",
+    amount: "денежные премии",
+    amountNum: 0.5,
+    deadline: "Ежегодно",
+    link: "https://xn--j1afe.xn--p1ai",
+    idea: "Медиапроект о героях Ачинского округа"
+  },
+  {
+    id: 48,
+    title: "Гранты Минобрнауки для популяризаторов науки",
+    direction: "наука",
+    status: "ongoing",
+    funder: "Минобрнауки РФ",
+    who: "Физлица, НКО, образовательные учреждения",
+    amount: "до 2 млн ₽",
+    amountNum: 2,
+    deadline: "Регулярно",
+    link: "https://minobrnauki.gov.ru",
+    idea: "Научно-популярные лекции и фестивали науки в Ачинске"
+  },
+  {
+    id: 49,
+    title: "Гранты на поддержку добровольчества",
+    direction: "молодежь",
+    status: "ongoing",
+    funder: "Росмолодёжь",
+    who: "Волонтёрские организации, физлица",
+    amount: "до 3 млн ₽",
+    amountNum: 3,
+    deadline: "Регулярно",
+    link: "https://grants.rosmolodez.ru",
+    idea: "Добровольческий центр в Ачинском округе"
+  },
+  {
+    id: 50,
+    title: "Гранты для школьных учителей",
+    direction: "образование",
+    status: "ongoing",
+    funder: "Минпросвещения РФ, фонды",
+    who: "Учителя школ",
+    amount: "до 500 тыс. ₽",
+    amountNum: 0.5,
+    deadline: "Регулярно",
+    link: "https://edu.gov.ru",
+    idea: "Авторские методические разработки учителей Ачинского округа"
+  },
+  {
+    id: 51,
+    title: "Гранты РФРИТ для стартапов в сфере ИИ",
+    direction: "ит",
+    status: "ongoing",
+    funder: "РФРИТ",
+    who: "ИТ-компании, стартапы",
+    amount: "до 20 млн ₽",
+    amountNum: 20,
+    deadline: "Круглогодично",
+    link: "https://ozp.rfrit.ru",
+    idea: "Разработка ИТ-решений для ЖКХ или транспорта Ачинска"
+  },
+  {
+    id: 52,
+    title: "Социальная выплата на жильё (КРСТ)",
+    direction: "жкх",
+    status: "ongoing",
+    funder: "Минсельхоз РФ",
+    who: "Жители и работники сельских территорий",
+    amount: "до 70% стоимости жилья",
+    amountNum: 3,
+    deadline: "Круглогодично",
+    link: "https://mcx.gov.ru",
+    idea: "Приобретение жилья для молодых специалистов в сёлах округа"
+  },
+  {
+    id: 53,
+    title: "Краевая программа «Территория 2020»",
+    direction: "молодежь",
+    status: "ongoing",
+    funder: "Правительство Красноярского края",
+    who: "Молодёжь 14-35 лет",
+    amount: "до 300 тыс. ₽",
+    amountNum: 0.3,
+    deadline: "Регулярно",
+    link: "https://territory2020.ru",
+    idea: "Молодёжные инициативы в сёлах Ачинского округа"
+  },
+  {
+    id: 54,
+    title: "Гранты на развитие внутреннего туризма (субсидии)",
+    direction: "туризм",
+    status: "ongoing",
+    funder: "Минэкономразвития РФ",
+    who: "Туроператоры, отели, ИП",
+    amount: "льготные кредиты 3-5%, до 400 млн ₽",
+    amountNum: 50,
+    deadline: "Круглогодично",
+    link: "https://tourism.gov.ru",
+    idea: "Туристический маршрут «По следам ачинских купцов»"
+  },
+  {
+    id: 55,
+    title: "Гранты для сельских пекарен (возмещение)",
+    direction: "бизнес",
+    status: "ongoing",
+    funder: "Минсельхоз РФ",
+    who: "Действующие сельские пекарни",
+    amount: "до 60% затрат",
+    amountNum: 3,
+    deadline: "Круглогодично",
+    link: "https://krasagro.ru",
+    idea: "Модернизация существующей пекарни в округе"
+  },
+  {
+    id: 56,
+    title: "Гранты для поддержки СОНКО (Минэкономразвития)",
+    direction: "нко",
+    status: "ongoing",
+    funder: "Минэкономразвития РФ",
+    who: "СОНКО",
+    amount: "до 10 млн ₽",
+    amountNum: 10,
+    deadline: "Регулярно",
+    link: "https://economy.gov.ru",
+    idea: "Развитие ресурсного центра НКО в Ачинске"
+  },
+  {
+    id: 57,
+    title: "Гранты для молодых учёных",
+    direction: "наука",
+    status: "ongoing",
+    funder: "РНФ, Минобрнауки",
+    who: "Молодые учёные до 39 лет",
+    amount: "до 7 млн ₽",
+    amountNum: 7,
+    deadline: "Регулярно",
+    link: "https://rscf.ru",
+    idea: "Научные исследования по проблемам Ачинского округа"
+  },
+  {
+    id: 58,
+    title: "Гранты «Пушкинская карта» для учреждений",
+    direction: "культура",
+    status: "ongoing",
+    funder: "Минкультуры РФ",
+    who: "Учреждения культуры",
+    amount: "оплата посещений",
+    amountNum: 0,
+    deadline: "Постоянно",
+    link: "https://culture.gov.ru",
+    idea: "Привлечение молодёжи в музеи и театры Ачинска"
+  },
+  {
+    id: 59,
+    title: "Гранты Минспорта Красноярского края",
+    direction: "спорт",
+    status: "ongoing",
+    funder: "Минспорт Красноярского края",
+    who: "Спортшколы, клубы, НКО",
+    amount: "до 3 млн ₽",
+    amountNum: 3,
+    deadline: "Регулярно",
+    link: "https://kraysport.ru",
+    idea: "Развитие дворового спорта и ГТО в округе"
+  },
+  {
+    id: 60,
+    title: "Гранты для участников СВО и членов их семей",
+    direction: "сво",
+    status: "ongoing",
+    funder: "Фонд «Защитники Отечества»",
+    who: "Ветераны СВО, семьи",
+    amount: "различные формы поддержки",
+    amountNum: 1,
+    deadline: "Круглогодично",
+    link: "https://gosuslugi.ru",
+    idea: "Социальная и психологическая реабилитация в округе"
+  },
+  {
+    id: 61,
+    title: "Грант «Цифровая кафедра»",
+    direction: "ит",
+    status: "ongoing",
+    funder: "Минобрнауки РФ",
+    who: "Вузы и студенты",
+    amount: "гранты на обучение",
+    amountNum: 0.5,
+    deadline: "Круглогодично",
+    link: "https://minobrnauki.gov.ru",
+    idea: "Повышение ИТ-компетенций молодёжи округа"
+  },
+  {
+    id: 62,
+    title: "Гранты для библиотек «Библиотека нового поколения»",
+    direction: "культура",
+    status: "ongoing",
+    funder: "Минкультуры РФ / нацпроект «Культура»",
+    who: "Муниципальные библиотеки",
+    amount: "5–10 млн ₽",
+    amountNum: 10,
+    deadline: "Регулярно",
+    link: "https://newbiblioteka.ru",
+    idea: "Модернизация сельских библиотек Ачинского округа"
+  },
+  {
+    id: 63,
+    title: "Гранты на создание модульных гостиниц",
+    direction: "туризм",
+    status: "ongoing",
+    funder: "Минэкономразвития РФ",
+    who: "ИП, ООО в туризме",
+    amount: "до 3 млн ₽",
+    amountNum: 3,
+    deadline: "Регулярно",
+    link: "https://tourism.gov.ru",
+    idea: "Модульные гостевые дома для туристов в сёлах округа"
+  },
+  {
+    id: 64,
+    title: "Гранты для НКО по охране окружающей среды",
+    direction: "экология",
+    status: "ongoing",
+    funder: "Минприроды РФ",
+    who: "НКО, экологические организации",
+    amount: "до 5 млн ₽",
+    amountNum: 5,
+    deadline: "Регулярно",
+    link: "https://mnr.gov.ru",
+    idea: "Защита редких видов животных в Ачинском округе"
+  },
+  {
+    id: 65,
+    title: "Гранты «Доступная среда»",
+    direction: "соцзащита",
+    status: "ongoing",
+    funder: "Минтруд РФ",
+    who: "НКО, образовательные учреждения",
+    amount: "до 5 млн ₽",
+    amountNum: 5,
+    deadline: "Регулярно",
+    link: "https://mintrud.gov.ru",
+    idea: "Создание архитектурной доступности в учреждениях Ачинска"
+  },
+  {
+    id: 66,
+    title: "Гранты на развитие дорожной сети (нацпроект «БКД»)",
+    direction: "дороги",
+    status: "ongoing",
+    funder: "Минтранс РФ / Минтранс Красноярского края",
+    who: "Муниципалитеты",
+    amount: "до 100 млн ₽",
+    amountNum: 100,
+    deadline: "Регулярно",
+    link: "https://bkdrf.ru",
+    idea: "Ремонт дорог в сёлах Ачинского округа"
+  },
+  {
+    id: 67,
+    title: "Грант на развитие малого агробизнеса (2026)",
+    direction: "агро",
+    status: "ongoing",
+    funder: "Минсельхоз РФ",
+    who: "Малые агропредприятия, участники СВО",
+    amount: "3–7 млн ₽",
+    amountNum: 7,
+    deadline: "Регулярно",
+    link: "https://krasagro.ru",
+    idea: "Развитие фермерских хозяйств в округе"
+  },
+  {
+    id: 68,
+    title: "Краевая грантовая программа «Среда возможностей»",
+    direction: "молодежь",
+    status: "ongoing",
+    funder: "Фонд Тимченко / Красноярский край",
+    who: "Подростки и наставники",
+    amount: "до 1 млн ₽",
+    amountNum: 1,
+    deadline: "Регулярно",
+    link: "https://fondtimchenko.ru",
+    idea: "Подростковые инициативы и наставничество в округе"
+  },
+  {
+    id: 69,
+    title: "Грант «АРТ-ОКНО» для музеев",
+    direction: "культура",
+    status: "ongoing",
+    funder: "Фонд Потанина",
+    who: "Музеи",
+    amount: "до 2,6 млн ₽",
+    amountNum: 2.6,
+    deadline: "Регулярно",
+    link: "https://fondpotanin.ru",
+    idea: "Современные музейные экспозиции в краеведческом музее Ачинска"
+  },
+  {
+    id: 70,
+    title: "Гранты на развитие народных промыслов",
+    direction: "культура",
+    status: "ongoing",
+    funder: "Минпромторг РФ",
+    who: "Мастера, предприятия НХП",
+    amount: "до 10 млн ₽",
+    amountNum: 10,
+    deadline: "Регулярно",
+    link: "https://minpromtorg.gov.ru",
+    idea: "Школа традиционных ремёсел в Ачинском округе"
+  },
+  {
+    id: 71,
+    title: "Гранты для ТОСов Красноярского края",
+    direction: "жкх",
+    status: "ongoing",
+    funder: "Правительство Красноярского края",
+    who: "Территориальные общественные самоуправления",
+    amount: "до 500 тыс. ₽",
+    amountNum: 0.5,
+    deadline: "Регулярно",
+    link: "https://krasgrant.ru",
+    idea: "Благоустройство дворов и общественных пространств"
+  },
+  {
+    id: 72,
+    title: "Гранты «Мой бизнес» Красноярского края",
+    direction: "бизнес",
+    status: "ongoing",
+    funder: "Центр «Мой бизнес»",
+    who: "Начинающие предприниматели",
+    amount: "до 500 тыс. ₽",
+    amountNum: 0.5,
+    deadline: "Круглогодично",
+    link: "https://мойбизнес24.рф",
+    idea: "Открытие и развитие бизнеса в Ачинском округе"
+  },
+  {
+    id: 73,
+    title: "Гранты для женщин-предпринимателей",
+    direction: "бизнес",
+    status: "ongoing",
+    funder: "Агентство МСП",
+    who: "Женщины-ИП и учредители",
+    amount: "до 1 млн ₽",
+    amountNum: 1,
+    deadline: "Регулярно",
+    link: "https://xn--h1alcedd.xn--d1aqf.xn--p1ai",
+    idea: "Развитие женского бизнеса в округе"
+  },
+  {
+    id: 74,
+    title: "Гранты на модернизацию коммунальной инфраструктуры",
+    direction: "жкх",
+    status: "ongoing",
+    funder: "Фонд содействия реформированию ЖКХ",
+    who: "Муниципалитеты, РСО",
+    amount: "до 200 млн ₽",
+    amountNum: 200,
+    deadline: "Регулярно",
+    link: "https://fondgkh.ru",
+    idea: "Замена теплосетей и водопроводов в Ачинске и округе"
+  },
+  {
+    id: 75,
+    title: "Гранты на строительство ФАПов и амбулаторий",
+    direction: "здравоохранение",
+    status: "ongoing",
+    funder: "Минздрав РФ",
+    who: "Муниципалитеты",
+    amount: "до 10 млн ₽",
+    amountNum: 10,
+    deadline: "Регулярно",
+    link: "https://minzdrav.gov.ru",
+    idea: "Новый ФАП в селе Ястребовка или Преображенка"
+  }
+];
+
+let currentDirection = "all";
+let currentSearch = "";
+
+function renderGrants() {
+  const container = document.getElementById("grantsContainer");
+  const filtered = grants.filter(g => {
+    const matchDirection = currentDirection === "all" || g.direction === currentDirection;
+    const matchSearch = currentSearch === "" || 
+      g.title.toLowerCase().includes(currentSearch) ||
+      g.funder.toLowerCase().includes(currentSearch) ||
+      g.direction.toLowerCase().includes(currentSearch) ||
+      g.idea.toLowerCase().includes(currentSearch);
+    return matchDirection && matchSearch;
+  });
+
+  const urgent = filtered.filter(g => g.status === "urgent");
+  const upcoming = filtered.filter(g => g.status === "upcoming");
+  const ongoing = filtered.filter(g => g.status === "ongoing");
+
+  let html = "";
+
+  if (urgent.length > 0) {
+    html += `
+      <div class="section">
+        <h2 class="section-title urgent">🔥 Срочные конкурсы <span class="pulse" style="color: var(--danger);">●</span></h2>
+        <div class="grants-grid">${urgent.map(renderCard).join("")}</div>
+      </div>
+    `;
+  }
+
+  if (upcoming.length > 0) {
+    html += `
+      <div class="section">
+        <h2 class="section-title upcoming">📅 Готовимся заранее</h2>
+        <div class="grants-grid">${upcoming.map(renderCard).join("")}</div>
+      </div>
+    `;
+  }
+
+  if (ongoing.length > 0) {
+    html += `
+      <div class="section">
+        <h2 class="section-title ongoing">💡 Круглогодичные возможности</h2>
+        <div class="grants-grid">${ongoing.map(renderCard).join("")}</div>
+      </div>
+    `;
+  }
+
+  if (filtered.length === 0) {
+    html = `
+      <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <h3>Ничего не найдено</h3>
+        <p>Попробуйте изменить фильтры или поисковый запрос</p>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+  updateStats(filtered);
+}
+
+function renderCard(grant) {
+  const badgeClass = `badge-${grant.status}`;
+  const statusText = grant.status === "urgent" ? "Срочно" : grant.status === "upcoming" ? "Скоро" : "Открыто";
+  const deadlineClass = grant.status === "urgent" ? "critical" : "";
+  
+  return `
+    <div class="grant-card ${grant.status}" onclick="window.open('${grant.link}', '_blank')">
+      <div class="grant-header">
+        <div class="grant-title">${grant.title}</div>
+        <span class="grant-badge ${badgeClass}">${statusText}</span>
+      </div>
+      
+      <div class="grant-meta">
+        <div class="meta-item">
+          <span class="meta-icon">🏦</span>
+          <span>Фонд: <span class="meta-value">${grant.funder}</span></span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-icon">👥</span>
+          <span>Заявители: <span class="meta-value">${grant.who}</span></span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-icon">💰</span>
+          <span>Сумма: <span class="meta-value" style="color: var(--success);">${grant.amount}</span></span>
+        </div>
+      </div>
+      
+      <div>
+        <span class="grant-direction">${grant.direction}</span>
+      </div>
+      
+      <div class="grant-idea">
+        <strong>💡 Идея для Ачинского округа:</strong><br>
+        ${grant.idea}
+      </div>
+      
+      <div class="deadline-bar">
+        <span>📅 Дедлайн:</span>
+        <span class="deadline-date ${deadlineClass}">${grant.deadline}</span>
+      </div>
+    </div>
+  `;
+}
+
+function updateStats(filtered) {
+  document.getElementById("urgentCount").textContent = filtered.filter(g => g.status === "urgent").length;
+  document.getElementById("upcomingCount").textContent = filtered.filter(g => g.status === "upcoming").length;
+  document.getElementById("ongoingCount").textContent = filtered.filter(g => g.status === "ongoing").length;
+  document.getElementById("totalGrants").textContent = filtered.length;
+  
+  const totalSum = filtered.reduce((sum, g) => sum + g.amountNum, 0);
+  document.getElementById("totalSum").textContent = totalSum.toFixed(1);
+}
+
+function resetFilters() {
+  currentDirection = "all";
+  currentSearch = "";
+  document.getElementById("searchInput").value = "";
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.direction === "all");
+  });
+  renderGrants();
+}
+
+// Обработчики
+document.getElementById("searchInput").addEventListener("input", (e) => {
+  currentSearch = e.target.value.toLowerCase().trim();
+  renderGrants();
+});
+
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentDirection = btn.dataset.direction;
+    renderGrants();
+  });
+});
+
+// Инициализация
+renderGrants();
+</script>
+</body>
+</html>
